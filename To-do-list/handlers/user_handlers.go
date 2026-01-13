@@ -8,8 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
-	"www.github.com/2021-5-20/t_d_list/config"
-	"www.github.com/2021-5-20/t_d_list/models"
+	"github.com/hakm2002/TODOLIST/config"
+	"github.com/hakm2002/TODOLIST/models"
 )
 
 func GenerateToken(userID uint) (string, error) {
