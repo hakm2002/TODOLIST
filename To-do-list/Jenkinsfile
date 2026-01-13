@@ -1,0 +1,70 @@
+pipeline {
+    agent any
+
+    environment {
+        // GANTI DENGAN USERNAME DOCKERHUB ANDA
+        DOCKER_IMAGE = "hakm2002/todolist-app" 
+        DOCKER_CRED_ID = "docker-hub" 
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Test & Build App') {
+            steps {
+                // Pastikan go terinstall di jenkins agent atau gunakan docker agent
+                // Untuk amannya kita skip test dulu, fokus ke build image
+                echo 'Building Application...'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh "docker build -t ${DOCKER_IMAGE}:latest ."
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: DOCKER_CRED_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Server') {
+            steps {
+                script {
+                    // Jaga-jaga buat network jika belum ada
+                    sh "docker network create devops-network || true"
+                    
+                    // Hapus container lama
+                    sh "docker stop todolist-app || true"
+                    sh "docker rm todolist-app || true"
+
+                    // Jalankan container baru
+                    // Perhatikan ENV VARS harus cocok dengan DB di TAHAP 1
+                    sh """
+                    docker run -d \
+                    --name todolist-app \
+                    --network devops-network \
+                    -p 8082:8080 \
+                    -e DB_HOST=mysql_todo \
+                    -e DB_PORT=3306 \
+                    -e DB_USER=user_todo \
+                    -e DB_PASSWORD=pass_todo \
+                    -e DB_NAME=todolist_db \
+                    ${DOCKER_IMAGE}:latest
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        always { sh "docker logout || true" }
+    }
+}
