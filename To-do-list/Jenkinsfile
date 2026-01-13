@@ -12,6 +12,24 @@ pipeline {
             steps { checkout scm }
         }
 
+        // --- TAMBAHAN BARU: SONARQUBE ---
+        stage('SonarQube Analysis') {
+            steps {
+                dir('To-do-list') {
+                    script {
+                        // GANTI 'SonarScanner' DENGAN NAMA DI GLOBAL TOOL CONFIGURATION ANDA
+                        def scannerHome = tool 'SonarScanner' 
+                        
+                        // GANTI 'sonar-server' DENGAN NAMA SERVER DI SYSTEM CONFIGURATION ANDA
+                        withSonarQubeEnv('sonar-server') { 
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        }
+                    }
+                }
+            }
+        }
+        // --------------------------------
+
         stage('Test & Build App') {
             steps {
                 // Masuk folder dulu jika mau test
