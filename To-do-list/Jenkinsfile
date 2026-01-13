@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        // GANTI DENGAN USERNAME DOCKERHUB ANDA
+        // Pastikan nama ini sesuai
         DOCKER_IMAGE = "hakm2002/todolist-app" 
         DOCKER_CRED_ID = "docker-hub" 
     }
@@ -14,15 +14,21 @@ pipeline {
 
         stage('Test & Build App') {
             steps {
-                // Pastikan go terinstall di jenkins agent atau gunakan docker agent
-                // Untuk amannya kita skip test dulu, fokus ke build image
-                echo 'Building Application...'
+                // Masuk folder dulu jika mau test
+                dir('To-do-list') {
+                    echo 'Building Application...'
+                    // sh 'go test ./...' // (Nanti bisa diaktifkan)
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                // MASUK FOLDER To-do-list SEBELUM BUILD
+                dir('To-do-list') {
+                    // Tanda titik (.) berarti build direktori saat ini
+                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
+                }
             }
         }
 
@@ -38,15 +44,12 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    // Jaga-jaga buat network jika belum ada
+                    // Bagian deploy tidak perlu masuk folder karena perintah docker bersifat global
                     sh "docker network create devops-network || true"
                     
-                    // Hapus container lama
                     sh "docker stop todolist-app || true"
                     sh "docker rm todolist-app || true"
 
-                    // Jalankan container baru
-                    // Perhatikan ENV VARS harus cocok dengan DB di TAHAP 1
                     sh """
                     docker run -d \
                     --name todolist-app \
