@@ -18,7 +18,7 @@ pipeline {
                 dir('To-do-list') {
                     script {
                         // GANTI 'SonarScanner' DENGAN NAMA DI GLOBAL TOOL CONFIGURATION ANDA
-                        def scannerHome = tool 'go-token' 
+                        def scannerHome = tool 'sonar' 
                         
                         // GANTI 'sonar-server' DENGAN NAMA SERVER DI SYSTEM CONFIGURATION ANDA
                         withSonarQubeEnv('SonarQube') { 
