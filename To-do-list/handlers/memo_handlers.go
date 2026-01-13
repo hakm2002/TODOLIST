@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"github.com/hakm2002/TODOLIST/config"
-	"github.com/hakm2002/TODOLIST/config"
+	"github.com/hakm2002/TODOLIST/models"
 )
 
 func CreateMemoHandler(c *gin.Context) {
