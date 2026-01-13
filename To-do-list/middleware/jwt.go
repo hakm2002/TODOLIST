@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"www.github.com/2021-5-20/t_d_list/config"
+	"github.com/hakm2002/TODOLIST/config"
 )
 
 func JWTAuthMiddleware() gin.HandlerFunc {
