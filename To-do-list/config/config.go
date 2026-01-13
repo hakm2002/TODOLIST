@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"www.github.com/2021-5-20/t_d_list/models"
+	"github.com/hakm2002/TODOLIST/models"
 )
 
 var JwtSecret = []byte("your_secret_key")
