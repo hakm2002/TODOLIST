@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"www.github.com/2021-5-20/t_d_list/handlers"
-	"www.github.com/2021-5-20/t_d_list/middleware"
+	"module github.com/hakm2002/TODOLIST/handlers"
+	"module github.com/hakm2002/TODOLIST/middleware"
 )
 
 func InitRoutes(r *gin.Engine) {
