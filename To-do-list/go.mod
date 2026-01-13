@@ -1,4 +1,4 @@
-module www.github.com/2021-5-20/t_d_list
+module github.com/hakm2002/TODOLIST
 
 go 1.23.3
 
