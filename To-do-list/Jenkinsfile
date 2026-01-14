@@ -7,50 +7,48 @@ pipeline {
         DOCKER_CRED_ID = "docker-hub" 
     }
 
-    stage('SonarQube Analysis') {
-    environment {
-        // Pastikan nama 'sonar' ini SAMA PERSIS dengan di Global Tool Configuration
-        scannerHome = tool 'sonar' 
-    }
-    steps {
-        dir('To-do-list') { // Sesuaikan folder source code
-            script {
-                // 1. Generate Coverage dulu (Wajib ada biar report ga kosong)
-                try {
-                    sh 'go mod tidy'
-                    sh 'go test ./... -coverprofile=coverage.out'
-                } catch (Exception e) {
-                    echo 'Warning: Unit test failed or returned error code, continuing scan...'
-                }
+    stages { // <--- TAMBAHAN PENTING: Pembungkus semua stage
+        
+        stage('SonarQube Analysis') {
+            environment {
+                // Pastikan nama 'sonar' ini SAMA PERSIS dengan di Global Tool Configuration
+                scannerHome = tool 'sonar' 
+            }
+            steps {
+                dir('To-do-list') { // Sesuaikan folder source code
+                    script {
+                        // 1. Generate Coverage dulu
+                        try {
+                            sh 'go mod tidy'
+                            sh 'go test ./... -coverprofile=coverage.out'
+                        } catch (Exception e) {
+                            echo 'Warning: Unit test failed or returned error code, continuing scan...'
+                        }
 
-                // 2. Ambil token 'go-token' dan simpan ke variabel SONAR_TOKEN
-                withCredentials([string(credentialsId: 'go-token', variable: 'SONAR_TOKEN')]) {
-                    
-                    // 3. Ambil URL server dari konfigurasi Jenkins (Screenshot 2 kamu)
-                    withSonarQubeEnv('SonarQube') {
-                        
-                        // 4. Jalankan Scanner dengan MEMAKSA token masuk lewat parameter -Dsonar.token
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
+                        // 2. Ambil token dan inject ke scanner
+                        withCredentials([string(credentialsId: 'go-token', variable: 'SONAR_TOKEN')]) {
+                            withSonarQubeEnv('SonarQube') {
+                                sh "${scannerHome}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
+                            }
+                        }
                     }
                 }
             }
         }
-    }
-}
+
+        // Stage ini sebelumnya error karena tidak punya nama 'stage'
+        stage('Test & Build App') { 
             steps {
-                // Masuk folder dulu jika mau test
                 dir('To-do-list') {
                     echo 'Building Application...'
-                    // sh 'go test ./...' // (Nanti bisa diaktifkan)
+                    // sh 'go test ./...' // (Bisa diaktifkan nanti)
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                // MASUK FOLDER To-do-list SEBELUM BUILD
                 dir('To-do-list') {
-                    // Tanda titik (.) berarti build direktori saat ini
                     sh "docker build -t ${DOCKER_IMAGE}:latest ."
                 }
             }
@@ -68,9 +66,7 @@ pipeline {
         stage('Deploy to Server') {
             steps {
                 script {
-                    // Bagian deploy tidak perlu masuk folder karena perintah docker bersifat global
                     sh "docker network create devops-network || true"
-                    
                     sh "docker stop todolist-app || true"
                     sh "docker rm todolist-app || true"
 
@@ -89,8 +85,8 @@ pipeline {
                 }
             }
         }
-    }
-    
+    } // <--- Penutup stages
+
     post {
         always { sh "docker logout || true" }
     }
