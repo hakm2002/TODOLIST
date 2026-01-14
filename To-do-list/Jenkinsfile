@@ -7,30 +7,36 @@ pipeline {
         DOCKER_CRED_ID = "docker-hub" 
     }
 
-    stages {
-        stage('Checkout') {
-            steps { checkout scm }
-        }
+    stage('SonarQube Analysis') {
+    environment {
+        // Pastikan nama 'sonar' ini SAMA PERSIS dengan di Global Tool Configuration
+        scannerHome = tool 'sonar' 
+    }
+    steps {
+        dir('To-do-list') { // Sesuaikan folder source code
+            script {
+                // 1. Generate Coverage dulu (Wajib ada biar report ga kosong)
+                try {
+                    sh 'go mod tidy'
+                    sh 'go test ./... -coverprofile=coverage.out'
+                } catch (Exception e) {
+                    echo 'Warning: Unit test failed or returned error code, continuing scan...'
+                }
 
-        // --- TAMBAHAN BARU: SONARQUBE ---
-        stage('SonarQube Analysis') {
-            steps {
-                dir('To-do-list') {
-                    script {
-                        // GANTI 'SonarScanner' DENGAN NAMA DI GLOBAL TOOL CONFIGURATION ANDA
-                        def scannerHome = tool 'sonar' 
+                // 2. Ambil token 'go-token' dan simpan ke variabel SONAR_TOKEN
+                withCredentials([string(credentialsId: 'go-token', variable: 'SONAR_TOKEN')]) {
+                    
+                    // 3. Ambil URL server dari konfigurasi Jenkins (Screenshot 2 kamu)
+                    withSonarQubeEnv('SonarQube') {
                         
-                        // GANTI 'sonar-server' DENGAN NAMA SERVER DI SYSTEM CONFIGURATION ANDA
-                        withSonarQubeEnv('SonarQube') { 
-                            sh "${scannerHome}/bin/sonar-scanner"
-                        }
+                        // 4. Jalankan Scanner dengan MEMAKSA token masuk lewat parameter -Dsonar.token
+                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.token=${SONAR_TOKEN}"
                     }
                 }
             }
         }
-        // --------------------------------
-
-        stage('Test & Build App') {
+    }
+}
             steps {
                 // Masuk folder dulu jika mau test
                 dir('To-do-list') {
