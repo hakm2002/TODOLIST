@@ -1,93 +1,24 @@
-pipeline {
-    agent any
+@Library('go-shared-lib') _
 
-    environment {
-        // Pastikan nama ini sesuai
-        DOCKER_IMAGE = "hakm2002/todolist-app" 
-        DOCKER_CRED_ID = "docker-hub" 
-    }
-
-    stages { // <--- TAMBAHAN PENTING: Pembungkus semua stage
-        
-        stage('SonarQube Analysis') {
-            environment {
-                // Pastikan nama 'sonar' ini SAMA PERSIS dengan di Global Tool Configuration
-                scannerHome = tool 'sonar' 
-            }
-            steps {
-                dir('To-do-list') { // Sesuaikan folder source code
-                    script {
-                        // 1. Generate Coverage dulu
-                        try {
-                            sh 'go mod tidy'
-                            sh 'go test ./... -coverprofile=coverage.out'
-                        } catch (Exception e) {
-                            echo 'Warning: Unit test failed or returned error code, continuing scan...'
-                        }
-
-                        // 2. Ambil token dan inject ke scanner
-                        withCredentials([string(credentialsId: 'go-token', variable: 'SONAR_TOKEN')]) {
-                            withSonarQubeEnv('SonarQube') {
-                                sh "${scannerHome}/bin/sonar-scanner -Dsonar.token=\${SONAR_TOKEN}"
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Stage ini sebelumnya error karena tidak punya nama 'stage'
-        stage('Test & Build App') { 
-            steps {
-                dir('To-do-list') {
-                    echo 'Building Application...'
-                    // sh 'go test ./...' // (Bisa diaktifkan nanti)
-                }
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                dir('To-do-list') {
-                    sh "docker build -t ${DOCKER_IMAGE}:latest ."
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: DOCKER_CRED_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker push ${DOCKER_IMAGE}:latest"
-                }
-            }
-        }
-
-        stage('Deploy to Server') {
-            steps {
-                script {
-                    sh "docker network create devops-network || true"
-                    sh "docker stop todolist-app || true"
-                    sh "docker rm todolist-app || true"
-
-                    sh """
-                    docker run -d \
-                    --name todolist-app \
-                    --network devops-network \
-                    -p 8082:8080 \
-                    -e DB_HOST=mysql_todo \
-                    -e DB_PORT=3306 \
-                    -e DB_USER=user_todo \
-                    -e DB_PASSWORD=pass_todo \
-                    -e DB_NAME=todolist_db \
-                    ${DOCKER_IMAGE}:latest
-                    """
-                }
-            }
-        }
-    } // <--- Penutup stages
-
-    post {
-        always { sh "docker logout || true" }
-    }
-}
+goPipeline(
+    // 1. Informasi Project
+    appName: 'todolist-app',
+    projectDir: 'To-do-list',  // <-- Penting: karena source code Anda ada di subfolder
+    
+    // 2. Konfigurasi Deploy
+    deployPort: '8082',        // Mapping port host (8082 -> 8080 container)
+    
+    // 3. Environment Variable Khusus Aplikasi ini (Database, dll)
+    appEnvVars: [
+        'DB_HOST': 'mysql_todo',
+        'DB_PORT': '3306',
+        'DB_USER': 'user_todo',
+        'DB_PASSWORD': 'pass_todo',
+        'DB_NAME': 'todolist_db'
+    ]
+    
+    // Opsional (jika default library sudah benar, tidak perlu ditulis):
+    // dockerUser: 'hakm2002', 
+    // dockerCredId: 'docker-hub',
+    // sonarCredId: 'go-token'
+)
