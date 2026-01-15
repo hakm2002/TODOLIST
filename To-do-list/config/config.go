@@ -8,11 +8,12 @@ import (
 	"github.com/hakm2002/TODOLIST/models"
 )
 
-var JwtSecret = []byte("your_secret_key")
+var JwtSecret = []byte("your_secret_key") //secret key
 var db *gorm.DB
 
 func InitDB() {
-	dsn := "gormuser:gormpass@tcp(127.0.0.1:3306)/todolist?charset=utf8mb4&parseTime=True&loc=Local"
+	// username pass 
+	dsn := "gormuser:gormpass@tcp(192.168.68.75:3306)/todolist?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
