@@ -8,7 +8,7 @@ import (
 	"github.com/hakm2002/TODOLIST/models"
 )
 
-var JwtSecret = []byte("your_secret_key") //secret key
+var JwtSecret = []byte("8Eb3yGaQzCz4E38Hw4QvwasViZKlnnO6d8oMM+kNMqQ=") //secret key
 var db *gorm.DB
 
 func InitDB() {
