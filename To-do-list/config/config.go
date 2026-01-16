@@ -1,7 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -13,24 +15,29 @@ var db *gorm.DB
 
 func InitDB() {
 	// username pass 
+	dbUser := getEnv("DB_USER", "root")
+	dbPass := getEnv("DB_PASSWORD", "")
+	dbHost := getEnv("DB_HOST", "127.0.0.1")
+	dbPort := getEnv("DB_PORT", "3306")
+	dbName := getEnv("DB_NAME", "todolist")
 	dsn := "gormuser:gormpass@tcp(192.168.68.75:3306)/todolist?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("数据库连接失败:", err)
+		log.Fatal("Gagal koneksi database:", err)
 	}
 	if err := db.AutoMigrate(&models.User{}); err != nil {
-		log.Fatal("数据库迁移失败:", err)
+		log.Fatal("Gagal koneksi database:", err)
 	}
 	if err := db.AutoMigrate(&models.Memo{}); err != nil {
-		log.Fatal("数据库迁移失败:", err)
+		log.Fatal("Gagal koneksi database:", err)
 	}
-	log.Println("数据库连接并迁移成功")
+	log.Println("db tekoneksi via .env!")
 }
 
 func GetDB() *gorm.DB {
 	if db == nil {
-		log.Fatal("数据库未初始化")
+		log.Fatal("Gagal koneksi database")
 	}
 	return db
 }
